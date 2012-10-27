@@ -1,0 +1,13 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  md5: MyString
+  filename: MyString
+  subfix: MyString
+  count: 1
+
+two:
+  md5: MyString
+  filename: MyString
+  subfix: MyString
+  count: 1

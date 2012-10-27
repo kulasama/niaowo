@@ -1,0 +1,156 @@
+
+%hr
+
+%ul.topics
+  - @topics.each_with_index do |topic,index|
+    %li
+      .title
+        %a.title{:href=>"/topics/#{topic.id}##{topic.sort_at.to_i}"} 
+          :preserve
+            #{topic.title}
+        (#{topic.get_comments_count}/#{topic.get_uv})
+
+      %span.tags  
+        - topic.tags.each do |tag|
+          %a.tag{:href=>"/tags/#{tag.id}"}
+            = tag.name 
+
+      %hr
+
+    
+%hr
+= paginate @topics,:theme => 'twitter-bootstrap'
+%hr
+
+- content_for :bottom do 
+
+  %form(style="display:none")
+    %input#topic_upload_images(type="file")
+    
+  = form_for @new_topic,:html=>{:id=>"post-form",:class=>"form-horizontal", :enctype=>"multipart/form-data"}  do |f|
+    .span4
+    
+      %legend#post 
+        发帖
+       
+      .control-group
+        %label.control-label 标题
+        .controls
+          %input{:id=>"title",:name=>"title"} 
+          %a.btn#upload-file(href="#") 上传    
+          %a.btn#add_image{"data-toggle"=>"modal",:href=>"#add_image_box"} 外链图片
+
+      .control-group
+        %label.control-label 内容
+        .controls
+          = text_area_tag :body,"",:class=>"span10", :rows => 10, :cols => 200 
+
+      .control-group  
+        .controls 
+          = submit_tag "发帖", :class=>"btn btn-primary",:disable_with =>"发帖中..."
+          %span
+            快捷键 ctrl+enter
+      .control-group
+        #editor-preview 
+
+%br
+
+
+.modal.hide.fade#add_image_box
+  .modal-header
+    %a.close{"data-dismiss"=>"modal"} &times;
+    %h3 插入图片
+  .modal-body
+    %input#image_text{:type=>"text",:value=>"http://"}
+  .modal-footer
+    %a.btn{"data-dismiss"=>"modal"} 关闭
+    %a.btn.btn-primary#insert_image{"data-dismiss"=>"modal"}  插入
+
+
+
+
+
+- content_for :javascript do
+  :javascript
+
+    function editor_change(){
+       var converter = new Markdown.Converter();
+       var html = $("#body").val();
+       $("#editor-preview").html(converter.makeHtml(html));
+    }
+    
+    function upload_file(){
+      $("#topic_upload_images").click();
+      return false;
+    }
+    function append_image_to_textarea(image){
+      $("#body").val($("#body").val()+"![]("+image+")");
+      editor_change();
+    }
+    function append_file_to_textarea(file){
+      $("#body").val($("#body").val()+"["+file+"]("+file+")");
+      editor_change();
+    }
+    
+    function upload_file_action(){
+      var opts = {
+        url:"/files",
+        type:"POST",
+        beforeSend:function(){
+          $("#upload-file").hide();
+          $("#upload-file").before("<span class='loading'>上传中...</span>")
+        },
+        success:function(result, status, xhr){
+          $("#upload-file").parent().find("span").remove();
+          $("#upload-file").show();
+          if(result.status=="ok"){
+            console.log("append");
+            if(result.type == "image"){
+              append_image_to_textarea(result.url);
+            }
+            else{
+              append_file_to_textarea(result.url);
+            }
+            
+          }
+          else{
+            console.log("upload error");
+          }
+        },
+      }
+      $("#topic_upload_images").fileUpload(opts)
+    }
+
+    function move_to_post(){
+      $("body").animate({scrollTop: $("#post").offset().top}, 1000);
+    }
+
+    function form_submit(){
+      $("#post-form").submit();
+    }
+    function focus_editor(){
+      $("#title").focus();
+      return false;
+    }
+    
+    function insert_image(){
+      image = $("#image_text").val();
+      append_image_to_textarea(image);
+    }
+
+    $(document).ready(function(){
+      key('⌘+e, ctrl+e', move_to_post);
+      key("i",focus_editor);
+    	$("#body").keyup(function(e){
+           if(e.ctrlKey && e.which == 13 || e.which == 10) {
+               form_submit();
+           }else{
+                editor_change();
+           }
+      })
+      $("#insert_image").live("click",insert_image);
+      $("#upload-file").live("click",upload_file);
+      upload_file_action();
+      
+    });
+

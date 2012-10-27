@@ -1,0 +1,11 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  commented_by_id: 1
+  auther_id: 1
+  topic_id: 1
+
+two:
+  commented_by_id: 1
+  auther_id: 1
+  topic_id: 1

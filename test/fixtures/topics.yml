@@ -1,0 +1,13 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  member_id: 1
+  title: MyString
+  body: MyText
+  message_id: 1
+
+two:
+  member_id: 1
+  title: MyString
+  body: MyText
+  message_id: 1

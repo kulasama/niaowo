@@ -1,0 +1,136 @@
+= content_for :nav do
+  %ul.nav.nav-tabs
+    - if @action_type == Feed::ALL_TYPE
+      %li.active
+        %a{:href=>"/member/feeds"} 
+          全部动态
+    - else
+      %li
+        %a{:href=>"/member/feeds"} 
+          全部动态
+    - if @action_type == Feed::TOPIC_TYPE
+      %li.active
+        %a{:href=>"/member/topics"} 
+          我发布的帖子
+    - else
+      %li
+        %a{:href=>"/member/topics"} 
+          我发布的帖子
+    - if @action_type == Feed::COMMENT_TYPE
+      %li.active
+        %a{:href=>"/member/comments"} 
+          我发出的评论
+    - else
+      %li
+        %a{:href=>"/member/comments"} 
+          我发出的评论
+    - if @action_type == Feed::COMMENTED_TYPE
+      %li.active
+        %a{:href=>"/member/commenteds"}  
+          我收到的评论
+    - else
+      %li
+        %a{:href=>"/member/commenteds"}  
+          我收到的评论
+    - if @action_type == Feed::MENTION_TYPE
+      %li.active
+        %a{:href=>"/member/ats"}
+          @我的
+    - else
+      %li
+        %a{:href=>"/member/ats"}
+          @我的
+    - if @action_type == Feed::PRAISE_TYPE
+      %li.active
+        %a{:href=>"/member/praises"}
+          赞我的
+    - else
+      %li
+        %a{:href=>"/member/praises"}
+          赞我的
+
+
+%ul
+  - @feeds.each do |feed|
+    
+    - if feed.action == Feed::MENTION_TYPE   
+      - begin     
+        - sender = Member.find feed.get_value[:sender_id]
+        - topic = Topic.find feed.get_value[:topic_id]
+        %li
+          #{sender.username}在
+          = link_to topic.title,"/topics/#{topic.id}"
+          里提到了你
+          %span.small
+            = time_tag feed.updated_at
+        %hr
+      - rescue
+      
+    - elsif feed.action == Feed::COMMENTED_TYPE 
+      - begin     
+        - sender = Member.find feed.get_value[:sender_id]     
+        - topic = Topic.find feed.get_value[:topic_id] 
+        %li             
+          #{sender.username}在
+          = link_to topic.title,"/topics/#{topic.id}"
+          里评论了你
+          %span.small
+            = time_tag feed.updated_at
+        %hr
+      - rescue
+
+    
+    - elsif feed.action == Feed::COMMENT_PRAISE_TYPE or feed.action == Feed::TOPIC_PRAISE_TYPE
+      - begin 
+        - sender = Member.find feed.get_value[:sender_id]
+        - topic = Topic.find feed.get_value[:topic_id]   
+        %li
+          #{sender.username}在
+          = link_to topic.title,"/topics/#{topic.id}"
+          里赞了你
+          %span.small
+            = time_tag feed.updated_at
+        %hr
+        - rescue
+
+    - elsif feed.action == Feed::SENSE_TYPE
+      %li
+        增加了<font color='red'>#{feed.get_value[:sense_num]}</font>点优越感
+        %span.small
+          = time_tag feed.updated_at
+      %hr
+
+    - elsif feed.action == Feed::TOPIC_TYPE
+      - begin
+        - topic = Topic.find feed.get_value[:topic_id]
+        %li        
+          我发表了
+          %a{:href=>"/topics/#{topic.id}"}
+            #{topic.title}
+          %span.small
+            = time_tag feed.updated_at
+        %hr
+      - rescue
+
+    - elsif feed.action == Feed::COMMENT_TYPE
+      - begin
+        - comment = Comment.find feed.get_value[:comment_id]
+        - if comment.topic
+          %li
+            我评论了
+            %a{:href=>"/topics/#{comment.topic.id}"}
+              #{comment.topic.title}
+            %span.small
+              = time_tag feed.updated_at
+          %hr
+      - rescue
+
+
+ 
+   
+   
+
+
+%hr
+= paginate @feeds,:theme => 'twitter-bootstrap'
+%hr

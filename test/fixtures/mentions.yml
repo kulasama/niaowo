@@ -1,0 +1,11 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  member_id: 1
+  mention_id: 1
+  message_id: 1
+
+two:
+  member_id: 1
+  mention_id: 1
+  message_id: 1

@@ -1,0 +1,19 @@
+搜索结果 
+%font{:color=>'red'}
+  =@search.total
+%hr
+
+%ul.search_hits
+  - @search.each_hit_with_result do |hit, topic|
+    %li.search_hit
+      .title
+        = link_to search_result_highlight(hit,:title),topic_path(topic)
+      .url
+        = link_to topic_url(topic), topic_path(topic)
+      .info #{topic.member.username}  #{time_ago_in_words(topic.created_at)}前 发表
+      .body
+        = highlight_hit(hit)
+    %hr
+
+= paginate @search.hits,:theme => 'twitter-bootstrap'
+

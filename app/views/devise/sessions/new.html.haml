@@ -1,0 +1,39 @@
+= form_for resource, :as => resource_name, :url => session_path(resource_name),:html => {:class=>"form-horizontal"} do |f| 
+
+  %legend 
+  
+  - if flash[:notice]
+    .label.label-success
+      = flash[:notice]
+  - else
+    登录鸟窝
+
+
+  .control-group
+    %label.control-label 用户名
+    .controls
+      = f.text_field :username
+  .control-group
+    %label.control-label 密码
+    .controls
+      = f.password_field :password
+  .control-group
+    .controls
+      = f.submit "登录" 
+
+  .control-group
+    .controls
+      <blockquote>建议使用firefox,chrome,opera登陆本站以取得最佳浏览效果。</blockquote>
+    .controls
+      %ul
+        %li 7月26日, 设置功能上线
+        %li 7月16日, 搜索功能上线
+        %li 7月14日, 编辑功能上线
+
+
+
+
+
+
+
+

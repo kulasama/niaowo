@@ -1,0 +1,11 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  mention_by_id: 1
+  mentioner_id: 1
+  topic_id: 1
+
+two:
+  mention_by_id: 1
+  mentioner_id: 1
+  topic_id: 1

@@ -1,0 +1,67 @@
+%span
+  %input{:type=>"button",
+     :id=>"get_invite_code",
+     :value=>"获取推荐码"}  
+  %br
+  每个人最多只能申请#{Invitation::MEMBER_SIZE}个邀请码,总共还有#{Invitation::MAX_SIZE - @invitions_size}个邀请码.推荐码7天内有效，7天后不定期收回.
+
+%hr
+%ul
+ 
+  - @invitations.each do |invitation|
+    %li
+      
+      - if invitation.inviter
+        %strike
+          = invitation.invite_code
+        已邀请 #{invitation.inviter.username}
+      - else
+        = invitation.invite_code
+     
+        
+    %br
+
+%hr
+= paginate @invitations,:theme => 'twitter-bootstrap'
+%hr
+
+- content_for :javascript do
+  :javascript
+     function do_get_invite(){
+         $.ajax({
+             url:"/invitations",
+             type:"POST",
+             dataType: "json",
+         }).done(function(data){
+             if (data.status=="success"){
+                bootbox.alert("申请成功!您申请的推荐码为"+data.invite_code,function(){
+                  window.location.reload(); 
+                });
+                
+             }
+             else if (data.status == "nosense"){
+                bootbox.alert("优越感不足!");
+             }
+             else if (data.status == "nopersoninv"){
+                bootbox.alert("您的推荐码总数已到限额,暂时不能申请推荐码!")
+             }
+             else if (data.status == "noinv"){
+                bootbox.alert("没有多余的推荐码可供申请!");
+             }
+         })       
+     }
+
+     function get_invite(){
+       bootbox.confirm("获取推荐码将要扣除#{Invitation::COST}点优越感，确定?",function(confirmed){
+         if(confirmed){
+              do_get_invite();
+         }
+       })
+     }
+
+     $(document).ready(function(){
+        $("#get_invite_code").live("click",get_invite)
+     })
+
+
+

@@ -1,0 +1,180 @@
+%html(lang="en")
+  %head
+    %meta(charset="utf-8")
+    %meta(http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1")
+    %meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    %title= content_for?(:title) ? yield(:title) : "鸟窝"
+    = csrf_meta_tags
+    / Le HTML5 shim, for IE6-8 support of HTML elements
+    /[if lt IE 9]
+      #fuckie(style="position:fixed;top:0;left:0;right:0;bottom:0;background:black;z-index:999999999;text-align:center;")
+        %a(href="http://godarkforie.org/upgrade")
+          %img(src="http://godarkforie.org/gonedark.jpg" alt="You are using an old version of Internet Explorer. Click here to find out more about the Going Dark For IE movement.")
+
+
+    = stylesheet_link_tag "application", :media => "all"
+    %link(href="/images/apple-touch-icon-144x144.png" rel="apple-touch-icon-precomposed" sizes="144x144")
+    %link(href="/images/apple-touch-icon-114x114.png" rel="apple-touch-icon-precomposed" sizes="114x114")
+    %link(href="/images/apple-touch-icon-72x72.png" rel="apple-touch-icon-precomposed" sizes="72x72")
+    %link(href="/images/apple-touch-icon.png" rel="apple-touch-icon-precomposed")
+    %link(href="/images/favicon.ico" rel="shortcut icon")
+
+
+  %body{:background=>"/background.gif"}
+    .navbar.navbar-inverse.navbar-fixed-top
+      .navbar-inner
+        .container
+          %span.icon-bar
+          %span.icon-bar
+          %span.icon-bar
+          .brand 
+            %a{:href=>"/"} 
+              %img{:src=>"/logo.gif",:height=>"24",:width=>"66",:alt=>"首页"}
+
+  
+  
+          .nav-collapse
+            %ul.nav       
+              - if member_signed_in?  
+                %li 
+                  = link_to "首页","/"     
+                %li  
+                  = link_to "发帖","/#post" 
+                %li
+                  = link_to "邀请好友","/invitations"   
+              - else
+                %li
+                  %a{:href=>"/account/sign_in"} 登录
+                %li
+                  %a{:href=>"/account/sign_up"} 注册
+   
+ 
+
+
+    .container
+      
+      .row-fluid
+        
+        .span1
+        .span7
+          = yield :nav
+          .niaowo-content
+            = yield	 
+        - if member_signed_in?
+          .span3
+            .well.sidebar-nav
+              %h3
+                = current_member.username 
+                你好
+                <br/>
+
+              %ul.nav.nav-list
+                %li 
+                  优越感 
+                  - profile =  Profile.find_or_create_by_member_id current_member.id
+                  - current_pv = Member.pv current_member.id
+
+                  %font{:color=>"red"}
+                    = profile.sense
+                %li= link_to "我的时间线", "/member/feeds"
+                %li= link_to "-- @提到我的", "/member/ats"
+                %li= link_to "-- 评论我的", "/member/commenteds"
+                %li= link_to "-- 我发布的帖子", "/member/topics"
+                %li= link_to "我的邀请码","/invitations"
+                %li= link_to "设置","/account/edit"
+                %li= link_to "退出","/account/sign_out"
+
+            .well.sidebar-nav
+              %ul.nav.nav-list
+                %li
+                  浏览量
+                  = Member.get_total_pv
+                %li
+                  用户总数
+                  = Member.all.size
+                - if member_signed_in?
+                  %li 新成员:#{Member.last.username}
+                  %br
+                  %li
+                    %form.form-search{:action=>"/search",:method=>"GET"}
+                      %input.input-medium.search-query{:type=>"text",:name=>"q",:placeholder=>"搜索"}
+      .row
+        = yield :bottom
+
+
+
+      %footer
+        %p &copy; 鸟窝 2012
+  /
+    Javascripts
+    \==================================================
+  / Placed at the end of the document so the pages load faster
+= javascript_include_tag "application"
+
+= yield :javascript
+
+- if member_signed_in?
+  :javascript
+     
+     function get_mention(){
+         $.ajax({
+             url:"/member/msg",
+             type:"GET",
+             dataType: "json",
+         }).done(function(data){
+             if(data.mention > 0){
+               noty({
+                  layout : 'topRight', 
+                  theme : 'noty_theme_default', 
+                  type : 'information',   
+                  text: "<a href='/member/ats'>"+data.mention+"条新@提到我， 查看</a>",  
+                  timeout : 0 
+               });
+             }
+             if(data.commented >0){
+                noty({
+                  layout : 'topRight', 
+                  theme : 'noty_theme_default', 
+                  type : 'information',   
+                  text: "<a href='/member/commenteds'>"+data.commented+"条评论，查看</a>",  
+                  timeout : 0 
+               });
+             }
+             if(data.praise > 0){
+                noty({
+                  layout : 'topRight', 
+                  theme : 'noty_theme_default', 
+                  type : 'information',
+                  text: "有人赞了你,<a href='/member/praises'>查看</a>",  
+                  timeout : 0 
+                });
+             }
+             if(data.sense > 0){
+                noty({
+                  layout : 'topRight',
+                  theme : 'noty_theme_default',
+                  type : 'warning',
+                  text : "优越感 <font color='red'>+"+data.sense+"</font>",
+                  timeout : 0
+                });
+             }
+         })       
+     }
+
+     function pagedown(){
+        $("body").animate({scrollTop:$("body").scrollTop()+400});
+     }
+
+     function pageup(){
+        $("body").animate({scrollTop:$("body").scrollTop()-400});
+     }
+
+     $(document).ready(function(){
+         get_mention();
+         setInterval(get_mention,60000);
+         key("j",pagedown);
+         key("k",pageup);
+     })
+
+
+

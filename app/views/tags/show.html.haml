@@ -1,0 +1,20 @@
+
+%hr
+
+%ul
+  - @topics.each do |topic|
+    %li
+      %a{:href=>"/topics/#{topic.id}"} 
+        = topic.title
+        - if topic.comments.size >0
+          (#{topic.comments.size})
+      %span.tags  
+        - topic.tags.each do |tag|
+          %a.tag{:href=>"/tags/#{tag.id}"}
+            = tag.name
+    %br
+
+    
+%hr
+= paginate @topics,:theme => 'twitter-bootstrap'
+

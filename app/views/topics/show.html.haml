@@ -1,0 +1,425 @@
+- content_for :title do
+  = @topic.title
+
+%p#notice= notice
+
+%h4
+  :preserve
+    #{@topic.title}
+
+%br
+.author-info
+  by 
+  #{@topic.member.username}   #{time_ago_in_words(@topic.created_at)}前 浏览点  #{@topic.viewpoint}
+
+%br
+
+
+%span
+  = auto_link(markdown(@topic.body),:html => { :target => '_blank' })
+%br
+
+
+
+.tags  
+  %a#add-tag.btn-inverse{:href=>"javascript:void(0)"} +加标签
+  
+
+  - @topic.tags.each do |tag|
+    %a.tag{:href=>"/tags/#{tag.id}"}
+      = tag.name
+  %br
+%br
+
+&= "----"
+= link_to @topic.member.username,"javascript:atclick('#{@topic.member.username}')"  
+#{time_ago_in_words(@topic.created_at)}前
+- if @topic.member.id == current_member.id
+  %a#edit-topic{"data-toggle"=>"modal",:href=>"#edit_topic_box"} 编辑
+  %a#delete-topic{:href=>"javascript:delete_topic()"} 删除
+  爱过(#{@topic_praise_count})
+  好累(#{Topic.get_pei @topic.id})
+- else
+  %a#topic_praise{:href=>"javascript:void(0)"}
+    爱过(#{@topic_praise_count})
+  %a#topic_pei{:href=>"javascript:void(0)"}
+    好累(#{Topic.get_pei @topic.id})
+%hr
+
+
+
+- @comments.each_with_index do |comment,index| 
+  - unless comment.deleted
+    %div{:class=>(index%2==0) ? "bg" : "bg2" }
+      %span
+        #{index+1}楼 #{time_ago_in_words(comment.created_at)}前
+        %br
+        %br
+        #{auto_link(markdown(comment.body),:html => { :target => '_blank' })}
+
+        &nbsp;&nbsp;
+        &= "----"
+        = link_to comment.member.username,"javascript:atclick('#{comment.member.username}')" 
+        - if comment.member.id == current_member.id
+          %a#edit-comment{:href=>"javascript:edit_comment(#{comment.id})"} 编辑
+          %a#delete-comment{:href=>"javascript:delete_comment(#{comment.id})"} 删除
+          爱过(#{Comment.get_praise comment.id})
+          好累(#{Comment.get_pei comment.id})
+        - else
+          %a#comment_praise{:href=>"javascript:comment_praise(#{comment.id})"}
+            爱过(#{Comment.get_praise comment.id})
+          %a#comment_pei{:href=>"javascript:comment_pei(#{comment.id})"}
+            好累(#{Comment.get_pei comment.id})
+      %hr.comment-hr
+    
+
+- content_for :bottom do 
+  %form(style="display:none")
+    %input#topic_upload_images(type="file") 
+  = form_for @comment,:html=>{:id=>"comment-form",:class=>"form-horizontal"} do |f|
+    .span
+    .span10
+      %legend#post 
+        回帖
+        
+      .control-group
+        %a.btn#upload-file(href="#") 上传
+        %a.btn#add_image{"data-toggle"=>"modal",:href=>"#add_image_box"} 外链图片
+        %input{:type=>:hidden,:name=>:topic, :value=>@topic.id}  
+        
+      .control-group
+        = text_area_tag :body,"",:class=>"span10", :rows => 10, :cols => 200 
+        
+      .control-group
+        = submit_tag "回帖", :class=>"btn btn-primary",:disable_with =>"回帖中..."
+        %span
+          快捷键 ctrl+enter
+      .control-group
+        #editor-preview
+
+
+.modal.hide.fade#edit_topic_box
+  .modal-header
+    %a.close{"data-dismiss"=>"modal"} &times;
+    %h3 编辑主题
+  .modal-body
+    .control-group
+      .controls
+        %input#edit_title{:type=>"text",:value=>"#{@topic.title}"}
+      .controls
+        = text_area_tag :edit_body,@topic.body, :rows => 10, :cols => 200 
+  .modal-footer
+    %a.btn{"data-dismiss"=>"modal"} 关闭
+    %a.btn.btn-primary#edit_topic{"data-dismiss"=>"modal"} 编辑
+
+
+.modal.hide.fade#edit_comment_box
+  .modal-header
+    %a.close{"data-dismiss"=>"modal"} &times;
+    %h3 编辑评论
+  .modal-body
+    .control-group
+      .controls
+        = text_area_tag :comment_edit_body,"", :rows => 10, :cols => 200 
+  .modal-footer
+    %a.btn{"data-dismiss"=>"modal"} 关闭
+    %a.btn.btn-primary#edit_comment{"data-dismiss"=>"modal"} 编辑
+
+.modal.hide.fade#add_image_box
+  .modal-header
+    %a.close{"data-dismiss"=>"modal"} &times;
+    %h3 插入图片
+  .modal-body
+    %input#image_text{:type=>"text",:value=>"http://"}
+  .modal-footer
+    %a.btn{"data-dismiss"=>"modal"} 关闭
+    %a.btn.btn-primary#insert_image{"data-dismiss"=>"modal"}  插入
+
+
+
+- content_for :javascript do
+  :javascript
+     function add_tag(tag_name){
+         $.ajax({
+           url:"/tags",
+           type:"POST",
+           data:{
+              topic:#{@topic.id},
+              tag:tag_name,
+           },
+           dataType:"json",
+         }).done(function(data){
+            if (data.status=="success"){
+               window.location.reload()
+            }
+         })
+    
+     }
+
+    function editor_change(){
+       var converter = new Markdown.Converter();
+       var html = $("#body").val();
+       $("#editor-preview").html(converter.makeHtml(html));
+    }
+    
+    function insert_image(){
+       image = $("#image_text").val();
+       append_image_to_textarea(image);
+     }
+
+
+
+     function click_add_tag(){
+         bootbox.prompt("添加标签 <br/><small>每位用户对一个主题只能打一次标签.<br/>tag字数大于10需要消耗1优越感<br/>如果没有优越感，无法发大于10个字的tag<br/>tag最多20个字</small>", function(result) {
+            if(result){
+              add_tag(result);
+            }
+         });
+     }
+     function topic_praise(){
+        $.ajax({
+           url:"/praises",
+           type:"POST",
+           data:{
+              model:#{@topic.id},
+              type:"topic"
+           },
+           dataType:"json",
+         }).done(function(data){
+            if (data.status=="success"){
+               window.location.reload()
+            }
+         })
+     }
+     
+     function topic_pei(){
+         $.ajax({
+          url:"/topics/#{@topic.id}/pei",
+          type:"POST",
+          dataType:"json",
+         }).done(function(data){
+            if (data.status == "success"){
+              window.location.reload();
+            }
+         })
+     }
+     
+     function comment_praise(comment_id){
+       $.ajax({
+         url:"/praises",
+         type:"POST",
+         data:{
+           model:comment_id,
+           type:"comment"
+         },
+         dataType:"json",
+       }).done(function(data){
+         if (data.status=="success"){
+           window.location.reload();
+         }
+       })
+     }
+     
+     function comment_pei(comment_id){
+          $.ajax({
+            url:"/comments/"+comment_id+"/pei",
+            type:"POST",
+            dataType:"json",
+          }).done(function(data){
+            if(data.status=="success"){
+              window.location.reload();
+            }
+          })
+       }
+
+     function do_edit_topic(){
+      $.ajax({
+        url:"/topics/#{@topic.id}",
+        type:"PUT",
+        data:{
+          title:$("#edit_title").val(),
+          body:$("#edit_body").val()
+        },
+        dataType:"json",
+      }).done(function(data){
+        if(data.status=="success"){
+          window.location.reload();
+        }
+      })
+     }
+
+     function edit_comment(id){
+         $.ajax({
+            url:"/comments/"+id,
+            type:"GET",
+            dataType:"json"
+         }).done(function(data){
+             $("#comment_edit_body").val(data.body)
+             $("#comment_edit_body").data("id",id)
+             $("#edit_comment_box").modal();
+         })
+     }
+
+     function do_edit_comment(){
+        id = $("#comment_edit_body").data("id")
+        $.ajax({
+          url:"/comments/"+id,
+          type:"PUT",
+          dataType:"json",
+          data:{
+            body:$("#comment_edit_body").val(),
+          }
+        }).done(function(data){
+          if(data.status=="success"){
+            window.location.reload();
+          }
+
+        })
+     }
+
+     function delete_topic(){
+        bootbox.confirm("确定删除?", function(confirmed) {
+          if(confirmed){
+            do_delete_topic();
+          }
+        });
+     }
+
+     function do_delete_topic(){
+        $.ajax({
+          url:"/topics/#{@topic.id}",
+          type:"DELETE",
+          dataType:"json",
+        }).done(function(data){
+          if(data.status=="success"){
+            window.location.href="/topics";
+          }
+        })
+     }
+
+     function delete_comment(id){
+       bootbox.confirm("确定删除?",function(confirmed){
+         if(confirmed){
+            do_delete_comment(id);
+         }
+       })
+     }
+
+     function do_delete_comment(id){
+       $.ajax({
+         url:"/comments/"+id,
+         type:"DELETE",
+         dataType:"json"
+       }).done(function(data){
+         if(data.status=="success"){
+            window.location.href="/topics/#{@topic.id}";
+         }
+       })
+     }
+
+    function move_to_comment(){
+      $("body").animate({scrollTop: $("#comment").offset().top}, 1000);
+    }
+
+    function form_submit(){
+      $("#comment-form").submit();
+    }
+
+    function focus_editor(){
+      
+      $("#body").focus();
+      var val = $("#body").val();
+      $("#body").val("");
+      $("#body").val(val);
+      
+      return false;
+    }
+    
+    function upload_file(){
+      $("#topic_upload_images").click();
+      return false;
+    }
+
+    function append_image_to_textarea(image){
+      $("#body").val($("#body").val()+"![]("+image+")");
+      editor_change();
+    }
+    function append_file_to_textarea(file){
+      $("#body").val($("#body").val()+"["+file+"]("+file+")");
+      editor_change();
+    }
+	
+    function append_string_to_textarea(string){
+      $("#body").val($("#body").val()+string);
+      editor_change();
+    }
+	
+    function atclick(username){
+      append_string_to_textarea("@"+username+" ");
+      focus_editor();
+    }
+	
+    function atwho(){
+      source_str = "#{@users_str}"
+      var source = source_str.split(",")
+      data = $.map(source,function(value,i) {
+        return {'id':i,'name':value}
+      })
+      $("textarea#body").atWho("@",{
+        tpl:"<li data-value='${name}'>${name}</li>",
+        data:data,
+        limit:20,
+      })
+    }
+	
+    
+    function upload_file_action(){
+      var opts = {
+        url:"/files",
+        type:"POST",
+        beforeSend:function(){
+          $("#upload-file").hide();
+          $("#upload-file").before("<span class='loading'>上传中...</span>")
+        },
+        success:function(result, status, xhr){
+          $("#upload-file").parent().find("span").remove();
+          $("#upload-file").show();
+          if(result.status=="ok"){
+            if(result.type == "image"){
+              append_image_to_textarea(result.url);
+            }
+            else{
+              append_file_to_textarea(result.url);
+            }
+            
+          }
+          else{
+          }
+        },
+      }
+      $("#topic_upload_images").fileUpload(opts)
+    }
+
+     $(document).ready(function(){
+        $("#add-tag").live("click",click_add_tag);
+        $("#topic_praise").live("click",topic_praise);
+      	$("#body").keyup(function(e){
+             if(e.ctrlKey && e.which == 13 || e.which == 10) {
+               form_submit();
+             }
+             else{
+               editor_change();
+             }
+        })
+        $("#topic_pei").live("click",topic_pei);
+        $("#insert_image").live("click",insert_image);
+        $("#edit_topic").live("click",do_edit_topic);
+        $("#edit_comment").live("click",do_edit_comment);
+        key('⌘+e, ctrl+e', move_to_comment);
+        key('i',focus_editor);
+        $("#upload-file").live("click",upload_file);
+        upload_file_action();
+        atwho();
+     })
+
+

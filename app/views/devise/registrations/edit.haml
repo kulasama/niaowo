@@ -1,0 +1,24 @@
+
+= form_for resource,:as => resource_name, :url => registration_path(resource_name),:html => {:class=>"form-horizontal",:method =>:put} do |f| 
+  %legend 修改密码
+
+  - if flash[:notice]
+    .label.label-warning
+      = flash[:notice]
+  = devise_error_messages!
+
+  .control-group
+    %label(class="control-label") 当前密码
+    .controls
+      %input(type="password" name="current_password")
+  .control-group
+    %label(class="control-label") 新密码
+    .controls
+      %input(type="password" name="password")
+  .control-group
+    %label(class="control-label") 密码确认
+    .controls
+      %input(type="password" name="password_confirmation")
+  .control-group
+    .controls
+      %input(type="submit" name="修改")
